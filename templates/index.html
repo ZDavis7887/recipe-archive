@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Discovery Archive</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: #4CAF50; margin-bottom: 10px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 800px; justify-content: center; }
+        input[type="text"], button { padding: 10px 15px; font-size: 16px; border-radius: 6px; border: 1px solid #333; }
+        input[type="text"] { flex: 1; background: #1e1e1e; color: #fff; }
+        button { background: #4CAF50; color: #fff; cursor: pointer; border: none; font-weight: bold; }
+        button:hover { background: #45a049; }
+        .container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
+        .card { background: #1e1e1e; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between; }
+        .card h3 { margin-top: 0; color: #81C784; }
+        .meta { font-size: 13px; color: #aaa; margin-bottom: 12px; display: flex; gap: 15px; }
+        .section-title { font-weight: bold; color: #ffb74d; margin-top: 10px; font-size: 14px; }
+        ul, ol { margin: 5px 0 15px 20px; padding: 0; font-size: 14px; color: #ddd; }
+        li { margin-bottom: 4px; }
+        .source-link { margin-top: 10px; font-size: 12px; color: #64B5F6; text-decoration: none; }
+        .source-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1>Recipe Archive</h1>
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search recipes by title or ingredients..." onkeyup="filterRecipes()">
+        <button onclick="loadRandomFive()">🎲 Random 6</button>
+        <button onclick="loadAllRecipes()">📂 All Recipes</button>
+    </div>
+
+    <div id="recipeContainer" class="container"></div>
+
+    <script>
+        let allRecipes = [];
+
+        async function loadAllRecipes() {
+            const res = await fetch('/api/recipes');
+            allRecipes = await res.json();
+            displayRecipes(allRecipes);
+        }
+
+        async function loadRandomFive() {
+            const res = await fetch('/api/recipes/random5');
+            const randomRecipes = await res.json();
+            displayRecipes(randomRecipes);
+        }
+
+        function displayRecipes(recipes) {
+            const container = document.getElementById('recipeContainer');
+            container.innerHTML = '';
+
+            if (recipes.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">No recipes found.</p>';
+                return;
+            }
+
+            recipes.forEach(r => {
+                // Split ingredients joined by " | "
+                const ingredientsList = r.Ingredients ? r.Ingredients.split(' | ').map(i => `<li>${i}</li>`).join('') : '';
+                // Split instructions joined by " || "
+                const instructionsList = r.Instructions ? r.Instructions.split(' || ').map(step => `<li>${step}</li>`).join('') : '';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div>
+                        <h3>${r.Title}</h3>
+                        <div class="meta">
+                            <span>⏱️ Prep: ${r.Prep_Time || 'N/A'}</span>
+                            <span>🔥 Cook: ${r.Cook_Time || 'N/A'}</span>
+                            <span>🍽️ Servings: ${r.Servings || 'N/A'}</span>
+                        </div>
+                        <div class="section-title">Ingredients:</div>
+                        <ul>${ingredientsList}</ul>
+                        <div class="section-title">Instructions:</div>
+                        <ol>${instructionsList}</ol>
+                    </div>
+                    ${r.URL ? `<a href="${r.URL}" target="_blank" class="source-link">🔗 View Original Recipe</a>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterRecipes() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allRecipes.filter(r => 
+                (r.Title && r.Title.toLowerCase().includes(query)) ||
+                (r.Ingredients && r.Ingredients.toLowerCase().includes(query))
+            );
+            displayRecipes(filtered);
+        }
+
+        // Load all recipes on initial page load
+        loadAllRecipes();
+    </script>
+</body>
+</html>

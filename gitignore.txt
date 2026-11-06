@@ -1,0 +1,6 @@
+media_library.db
+__pycache__/
+.venv/
+*.csv
+instance/
+.DS_Store
