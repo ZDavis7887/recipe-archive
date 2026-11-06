@@ -31,7 +31,7 @@ def get_random_five():
   conn = get_db_connection()
   cursor = conn.cursor()
   # Randomly fetch 5 recipes from your recipes table
-  cursor.execute("SELECT * FROM recipes ORDER BY RANDOM() LIMIT 6")
+  cursor.execute("SELECT * FROM recipes ORDER BY RANDOM() LIMIT 1")
   rows = cursor.fetchall()
   conn.close()
   return jsonify([dict(row) for row in rows])
